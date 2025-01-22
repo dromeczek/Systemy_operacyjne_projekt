@@ -7,14 +7,14 @@
 
 #define SHM_KEY 1234
 #define SEM_KEY 5678
-#define K 5
+#define K 5  // Liczba klientów, którą może obsłużyć jedna kasa
 #define MIN_KASY 2
-#define MAX_KASY 10
+#define MAX_KASY 5
 
 struct shared_data {
     int liczba_klientow;
-    int liczba_kas;
-    int alarm_pozarowy;
+    int kolejki[MAX_KASY];
+    int otwarte_kasy[MAX_KASY];
 };
 
 void sem_op(int semid, int semnum, int op) {
@@ -22,7 +22,10 @@ void sem_op(int semid, int semnum, int op) {
     sb.sem_num = semnum;
     sb.sem_op = op;
     sb.sem_flg = 0;
-    semop(semid, &sb, 1);
+    if (semop(semid, &sb, 1) == -1) {
+        perror("Błąd operacji na semaforze");
+        exit(1);
+    }
 }
 
 void sem_p(int semid, int semnum) { sem_op(semid, semnum, -1); }
@@ -49,43 +52,52 @@ int main() {
 
     semctl(semid, 0, SETVAL, 1);
 
+    // Inicjalizacja pamięci
     data->liczba_klientow = 0;
-    data->liczba_kas = MIN_KASY;
-    data->alarm_pozarowy = 0;
+    for (int i = 0; i < MAX_KASY; i++) {
+        data->kolejki[i] = 0;
+        data->otwarte_kasy[i] = (i < MIN_KASY) ? 1 : 0;  // Pierwsze 2 kasy otwarte
+    }
 
     while (1) {
-        sleep(1);
+        sleep(2);  // Aktualizacja co 2 sekundy
 
         sem_p(semid, 0);
-        if (data->alarm_pozarowy) {
-            printf("\033[0;31mKierownik: Pożar! Zamykam wszystkie kasy.\033[0m\n");
-            data->liczba_kas = 0;
-            sem_v(semid, 0);
-            break;
+        printf("\nKierownik: Liczba klientów: %d\n", data->liczba_klientow);
+
+        // Sprawdzenie statusu kas
+        int otwarte = 0;
+        for (int i = 0; i < MAX_KASY; i++) {
+            if (data->otwarte_kasy[i]) {
+                printf("Kasa %d: Otwarta, kolejka: %d\n", i, data->kolejki[i]);
+                otwarte++;
+            }
         }
 
-        int potrzebne_kasy = (data->liczba_klientow / K) + (data->liczba_klientow % K > 0);
-        if (potrzebne_kasy < MIN_KASY) potrzebne_kasy = MIN_KASY;
-        if (potrzebne_kasy > MAX_KASY) potrzebne_kasy = MAX_KASY;
+        // Zamykanie kas, jeśli warunek liczby klientów jest spełniony
+        if (data->liczba_klientow < K * (otwarte - 1) && otwarte > MIN_KASY) {
+            for (int i = MAX_KASY - 1; i >= 0; i--) {  // Zamykamy kasę z najwyższym numerem
+                if (data->otwarte_kasy[i]) {
+                    data->otwarte_kasy[i] = 0;
+                    printf("Kierownik: Zamykam kasę %d.\n", i);
+                    break;
+                }
+            }
+        }
 
-        data->liczba_kas = potrzebne_kasy;
-        printf("Kierownik: Liczba klientów: %d, Liczba kas: %d\n", data->liczba_klientow, data->liczba_kas);
+        // Otwieranie kas, jeśli potrzeba
+        if (data->liczba_klientow > K * otwarte && otwarte < MAX_KASY) {
+            for (int i = 0; i < MAX_KASY; i++) {
+                if (!data->otwarte_kasy[i]) {
+                    data->otwarte_kasy[i] = 1;
+                    printf("Kierownik: Otwieram kasę %d.\n", i);
+                    break;
+                }
+            }
+        }
+
         sem_v(semid, 0);
     }
 
-    // Usuwanie pamięci współdzielonej
-    if (shmdt(data) == -1) {
-        perror("Błąd odłączania pamięci współdzielonej");
-    }
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("Błąd usuwania pamięci współdzielonej");
-    }
-
-    // Usuwanie semaforów
-    if (semctl(semid, 0, IPC_RMID) == -1) {
-        perror("Błąd usuwania semaforów");
-    }
-
-    printf("Kierownik: Zasoby zostały wyczyszczone.\n");
     return 0;
 }
