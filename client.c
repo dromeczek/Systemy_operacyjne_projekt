@@ -8,11 +8,12 @@
 
 #define SHM_KEY 1234
 #define SEM_KEY 5678
+#define K 5
 
 struct shared_data {
     int liczba_klientow;
-    int liczba_kas;
-    int alarm_pozarowy;
+    int kolejki[K];
+    int otwarte_kasy[K];
 };
 
 void sem_op(int semid, int semnum, int op) {
@@ -20,12 +21,11 @@ void sem_op(int semid, int semnum, int op) {
     sb.sem_num = semnum;
     sb.sem_op = op;
     sb.sem_flg = 0;
-    if (semop(semid, &sb, 1) == -1) { // Trzeci argument to liczba operacji (1 w tym przypadku)
-        perror("Błąd podczas semop");
+    if (semop(semid, &sb, 1) == -1) {
+        perror("Błąd operacji na semaforze");
         exit(1);
     }
 }
-
 
 void sem_p(int semid, int semnum) { sem_op(semid, semnum, -1); }
 void sem_v(int semid, int semnum) { sem_op(semid, semnum, 1); }
@@ -52,20 +52,25 @@ int main() {
     }
 
     sem_p(semid, 0);
-    if (data->alarm_pozarowy) {
-        printf("Klient: Pożar! Uciekam!\n");
-        sem_v(semid, 0);
-        exit(0);
-    }
+
+    // Wybór kasy losowo spośród otwartych
+    int wybrana_kasa = -1;
+    do {
+        wybrana_kasa = rand() % (K+1)-1;
+    } while (!data->otwarte_kasy[wybrana_kasa]);
+
+    data->kolejki[wybrana_kasa]++;
     data->liczba_klientow++;
-    printf("Klient: Wchodzę do sklepu. Liczba klientów: %d\n", data->liczba_klientow);
+    printf("Klient: Wchodzę do kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa, data->liczba_klientow);
+
     sem_v(semid, 0);
 
-    sleep(rand() % 5 + 1);
+    sleep(rand() % 5 + 10); // Symulacja zakupów
 
     sem_p(semid, 0);
+    data->kolejki[wybrana_kasa]--;
     data->liczba_klientow--;
-    printf("Klient: Wychodzę ze sklepu. Liczba klientów: %d\n", data->liczba_klientow);
+    printf("Klient: Wychodzę z kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa, data->liczba_klientow);
     sem_v(semid, 0);
 
     return 0;
