@@ -48,7 +48,7 @@ int main() {
     }
 
     sem_p(semid, 0);
-    printf("Strażak: Pożar zgłoszony!\n");
+    printf("\033[0;37;41mStrażak: Pożar zgłoszony!\033[0m\n");
     data->alarm_pozarowy = 1;
     sem_v(semid, 0);
 
