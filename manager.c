@@ -58,7 +58,7 @@ int main() {
 
         sem_p(semid, 0);
         if (data->alarm_pozarowy) {
-            printf("Kierownik: Pożar! Zamykam wszystkie kasy.\n");
+            printf("\033[0;31mKierownik: Pożar! Zamykam wszystkie kasy.\033[0m\n");
             data->liczba_kas = 0;
             sem_v(semid, 0);
             break;
