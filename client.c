@@ -9,14 +9,17 @@
 
 #define SHM_KEY 1234
 #define SEM_KEY 5678
-#define K 5
+
+#define MIN_KASY 2
+#define MAX_KASY 10
 
 struct shared_data {
     int liczba_klientow;
-    int kolejki[K];
-    int otwarte_kasy[K];
+    int kolejki[MAX_KASY];
+    int otwarte_kasy[MAX_KASY];
     int alarm_pozarowy;
 };
+
 
 void sem_op(int semid, int semnum, int op) {
     struct sembuf sb;
@@ -44,7 +47,7 @@ void handle_sigterm(int sig) {
         data->kolejki[wybrana_kasa]--;
         data->liczba_klientow--;
         printf("Klient:Trwa ewakuacja uciekam. Opuszczam kolejkę kasy %d. Liczba klientów: %d\n",
-               wybrana_kasa, data->liczba_klientow);
+               wybrana_kasa+1, data->liczba_klientow);
     }
 
     sem_v(semid, 0);  // Odblokowanie sekcji krytycznej
@@ -85,12 +88,12 @@ int main() {
 
     // Wybór kasy losowo spośród otwartych
     do {
-        wybrana_kasa = rand() % K;  // Losowanie kasy z zakresu 0..K-1
+        wybrana_kasa = rand() % MAX_KASY;  
     } while (!data->otwarte_kasy[wybrana_kasa]);
 
     data->kolejki[wybrana_kasa]++;
     data->liczba_klientow++;
-    printf("Klient: Wchodzę do kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa, data->liczba_klientow);
+    printf("Klient: Wchodzę do kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa+1, data->liczba_klientow);
 
     sem_v(semid, 0);
 
@@ -99,7 +102,7 @@ int main() {
     sem_p(semid, 0);
     data->kolejki[wybrana_kasa]--;
     data->liczba_klientow--;
-    printf("Klient: Wychodzę z kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa, data->liczba_klientow);
+    printf("Klient: Wychodzę z kolejki kasy %d. Liczba klientów: %d\n", wybrana_kasa+1, data->liczba_klientow);
     sem_v(semid, 0);
 
     // Odłączenie pamięci współdzielonej
