@@ -7,14 +7,14 @@
 
 #define SHM_KEY 1234
 #define SEM_KEY 5678
-#define K 5  // Liczba klientów, którą może obsłużyć jedna kasa
+#define K 3  // Liczba klientów, którą może obsłużyć jedna kasa
 #define MIN_KASY 2
-#define MAX_KASY 5
+#define MAX_KASY 10
 
 struct shared_data {
     int liczba_klientow;
-    int kolejki[K];
-    int otwarte_kasy[K];
+    int kolejki[MAX_KASY];
+    int otwarte_kasy[MAX_KASY];
     int alarm_pozarowy;
 };
 
@@ -71,7 +71,7 @@ int main() {
         int otwarte = 0;
         for (int i = 0; i < MAX_KASY; i++) {
             if (data->otwarte_kasy[i]) {
-                printf("Kasa %d: Otwarta, kolejka: %d\n", i, data->kolejki[i]);
+                printf("Kasa %d: Otwarta, kolejka: %d\n", i+1, data->kolejki[i]);
                 otwarte++;
             }
         }
@@ -81,7 +81,7 @@ int main() {
             for (int i = MAX_KASY - 1; i >= 0; i--) {  // Zamykamy kasę z najwyższym numerem
                 if (data->otwarte_kasy[i]) {
                     data->otwarte_kasy[i] = 0;
-                    printf("Kierownik: Zamykam kasę %d.\n", i);
+                    printf("Kierownik: Zamykam kasę %d.\n", i+1);
                     break;
                 }
             }
@@ -92,7 +92,7 @@ int main() {
             for (int i = 0; i < MAX_KASY; i++) {
                 if (!data->otwarte_kasy[i]) {
                     data->otwarte_kasy[i] = 1;
-                    printf("Kierownik: Otwieram kasę %d.\n", i);
+                    printf("Kierownik: Otwieram kasę %d.\n", i+1);
                     break;
                 }
             }
@@ -106,7 +106,7 @@ int main() {
             for (int i = 0; i < MAX_KASY; i++) {
                 if (data->otwarte_kasy[i]) {
                     data->otwarte_kasy[i] = 0;
-                    printf("Kierownik: Zamykam kasę %d.\n", i);
+                    printf("Kierownik: Zamykam kasę %d.\n", i+1);
                 }
             }
 
