@@ -4,17 +4,19 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 
+
 #define SHM_KEY 1234
 #define SEM_KEY 5678
 
-#define K 5
+#define MIN_KASY 2
+#define MAX_KASY 10
+
 struct shared_data {
     int liczba_klientow;
-    int kolejki[K];
-    int otwarte_kasy[K];
+    int kolejki[MAX_KASY];
+    int otwarte_kasy[MAX_KASY];
     int alarm_pozarowy;
 };
-
 void sem_op(int semid, int semnum, int op) {
     struct sembuf sb;
     sb.sem_num = semnum;
