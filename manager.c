@@ -13,8 +13,9 @@
 
 struct shared_data {
     int liczba_klientow;
-    int kolejki[MAX_KASY];
-    int otwarte_kasy[MAX_KASY];
+    int kolejki[K];
+    int otwarte_kasy[K];
+    int alarm_pozarowy;
 };
 
 void sem_op(int semid, int semnum, int op) {
@@ -54,6 +55,7 @@ int main() {
 
     // Inicjalizacja pamięci
     data->liczba_klientow = 0;
+    data->alarm_pozarowy = 0; // Flaga alarmu pożarowego ustawiona na 0
     for (int i = 0; i < MAX_KASY; i++) {
         data->kolejki[i] = 0;
         data->otwarte_kasy[i] = (i < MIN_KASY) ? 1 : 0;  // Pierwsze 2 kasy otwarte
@@ -94,6 +96,38 @@ int main() {
                     break;
                 }
             }
+        }
+
+        // Sprawdzenie alarmu pożarowego
+        if (data->alarm_pozarowy == 1 && data->liczba_klientow == 0) {
+            printf("\nKierownik: Alarm pożarowy aktywny! Czyszczę zasoby i kończę działanie.\n");
+
+            // Zamykanie wszystkich kas
+            for (int i = 0; i < MAX_KASY; i++) {
+                if (data->otwarte_kasy[i]) {
+                    data->otwarte_kasy[i] = 0;
+                    printf("Kierownik: Zamykam kasę %d.\n", i);
+                }
+            }
+
+            // Odłączenie pamięci współdzielonej
+            if (shmdt(data) == -1) {
+                perror("Nie można odłączyć pamięci współdzielonej");
+            }
+
+            if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+                perror("Nie można usunąć pamięci współdzielonej");
+            }
+
+            // Usuwanie semafora
+            if (semctl(semid, 0, IPC_RMID) == -1) {
+                perror("Nie można usunąć semafora");
+            }
+
+            printf("Kierownik: Zasoby zostały wyczyszczone. Zakończenie pracy.\n");
+
+            // Nie wykonujemy więcej operacji na semaforze po jego usunięciu
+            exit(0);
         }
 
         sem_v(semid, 0);
