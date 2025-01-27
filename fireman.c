@@ -7,9 +7,11 @@
 #define SHM_KEY 1234
 #define SEM_KEY 5678
 
+#define K 5
 struct shared_data {
     int liczba_klientow;
-    int liczba_kas;
+    int kolejki[K];
+    int otwarte_kasy[K];
     int alarm_pozarowy;
 };
 
@@ -49,6 +51,7 @@ int main() {
 
     sem_p(semid, 0);
     printf("\033[0;37;41mStrażak: Pożar zgłoszony!\033[0m\n");
+    system("pkill  client");
     data->alarm_pozarowy = 1;
     sem_v(semid, 0);
 
