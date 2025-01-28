@@ -22,11 +22,11 @@ void start_client() {
         exit(1);
     }
 }
-
+// Funkcja zapobiegająca tworzeniu procesów zombie
 void no_zombie() {
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));  // Wyzerowanie struktury
-    sa.sa_flags = SA_NOCLDWAIT; // Automatyczne "sprzątanie" procesów zombie
+    struct sigaction sa; // Struktura przechowująca informacje o obsłudze sygnału
+    memset(&sa, 0, sizeof(sa));  // Wyzerowanie struktury, aby uniknąć niepożądanych wartości
+    sa.sa_flags = SA_NOCLDWAIT; // Flaga ustawiająca automatyczne "sprzątanie" procesów zombie
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {
         perror("Błąd podczas ustawiania sigaction");
         exit(1);
@@ -34,7 +34,7 @@ void no_zombie() {
 }
 
 int main(int argc, char *argv[]) {
-    int num_clients = DEFAULT_CLIENTS;
+    int num_clients = DEFAULT_CLIENTS; // Liczba klientów do uruchomienia (domyślnie 5)
 
     // Sprawdzenie, czy użytkownik podał liczbę klientów jako argument
     if (argc > 1) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < num_clients; i++) {
         start_client();
         printf("Generator: Uruchomiono klienta %d\n", i + 1);
-       // usleep(100000);  // Opcjonalnie: krótka pauza (100 ms) między tworzeniem klientów
+        sleep(1);  // Opcjonalnie: krótka pauza (100 ms) między tworzeniem klientów
     }
 
     printf("Generator: Wszyscy klienci uruchomieni.\n");
