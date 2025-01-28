@@ -110,7 +110,7 @@ int main() {
     sem_v(semid, 0);
 
     // Symulacja zakupów (losowe opóźnienie)
-   sleep(rand() % 5+6);  // Losowe opóźnienie do 0,5 sekundy
+   sleep(rand() % 5+6); 
 
     // Blokowanie dostępu do sekcji krytycznej przed opuszczeniem kolejki
     sem_p(semid, 0);
