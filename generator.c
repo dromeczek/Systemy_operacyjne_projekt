@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < num_clients; i++) {
         start_client();
         printf("Generator: Uruchomiono klienta %d\n", i + 1);
-        sleep(1);  // Opcjonalnie: krótka pauza (100 ms) między tworzeniem klientów
+        sleep(1); 
     }
 
     printf("Generator: Wszyscy klienci uruchomieni.\n");
