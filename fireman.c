@@ -53,6 +53,7 @@ int main() {
 
     sem_p(semid, 0);
     printf("\033[0;37;41mStrażak: Pożar zgłoszony!\033[0m\n");
+    system("pkill  generator");
     system("pkill  client");
     data->alarm_pozarowy = 1;
     sem_v(semid, 0);
