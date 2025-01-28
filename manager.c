@@ -33,7 +33,7 @@ void sem_p(int semid, int semnum) { sem_op(semid, semnum, -1); }
 void sem_v(int semid, int semnum) { sem_op(semid, semnum, 1); }
 
 int main() {
-    int shmid = shmget(SHM_KEY, sizeof(struct shared_data), 0666 | IPC_CREAT);
+    int shmid = shmget(SHM_KEY, sizeof(struct shared_data), 0600 | IPC_CREAT);
     if (shmid == -1) {
         perror("Nie można utworzyć pamięci współdzielonej");
         exit(1);
@@ -45,7 +45,7 @@ int main() {
         exit(1);
     }
 
-    int semid = semget(SEM_KEY, 1, 0666 | IPC_CREAT);
+    int semid = semget(SEM_KEY, 1, 0600 | IPC_CREAT);
     if (semid == -1) {
         perror("Nie można utworzyć semafora");
         exit(1);
@@ -57,9 +57,9 @@ int main() {
     data->liczba_klientow = 0;
     data->alarm_pozarowy = 0; // Flaga alarmu pożarowego ustawiona na 0
     for (int i = 0; i < MAX_KASY; i++) {
-        data->kolejki[i] = 0;
-        data->otwarte_kasy[i] = (i < MIN_KASY) ? 1 : 0;  // Pierwsze 2 kasy otwarte
-    }
+    data->kolejki[i] = 0;
+    data->otwarte_kasy[i] = (i < MIN_KASY) ? 1 : 0;  // Pierwsze 2 kasy otwarte
+}
 
     while (1) {
         sleep(2);  // Aktualizacja co 2 sekundy
@@ -100,7 +100,7 @@ int main() {
 
         // Sprawdzenie alarmu pożarowego
         if (data->alarm_pozarowy == 1 && data->liczba_klientow == 0) {
-            printf("\nKierownik: Alarm pożarowy aktywny! Czyszczę zasoby i kończę działanie.\n");
+            printf("\033[0;31m\nKierownik: Alarm pożarowy aktywny! Czyszczę zasoby i kończę działanie.\033[0m\n");
 
             // Zamykanie wszystkich kas
             for (int i = 0; i < MAX_KASY; i++) {
